@@ -17,6 +17,9 @@ read.table('./UCI HAR Dataset/test/subject_test.txt') -> subject_test
 features <- read.table("./UCI HAR Dataset/features.txt")
 activity_labels <- read.table("./UCI HAR Dataset/activity_labels.txt", stringsAsFactors = F)
 
+#Binding 'X_test' and 'X_train' data frames
+X <- rbind(X_test, X_train)
+
 #Binding together 'subject_test' and 'subject_train' data frames
 subject <- rbind(subject_test, subject_train)
 # renaming the column in 'subject' data frame
@@ -26,9 +29,6 @@ names(subject)[1] <- "Subject"
 y <- rbind(y_test, y_train)
 # renaming the column in 'y' data frame
 names(y)[1] <- "Activity"
-
-#Binding 'X_test' and 'X_train' data frames
-X <- rbind(X_test, X_train)
 
 # changing values in 'y' from numbers to activity names in accordance with 'activity_labels' data frame
 for (k in 1:nrow(y)) {
