@@ -1,0 +1,104 @@
+---
+title: "Practical Machine Learning Course Project"
+author: "Mykola Klymenko"
+date: "18 October 2016"
+output: html_document
+---
+#Introduction
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement – a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: 
+ <http://groupware.les.inf.puc-rio.br/har>
+ See the section on the Weight Lifting Exercise Dataset.
+
+#Data input
+
+```{r data_input, eval = FALSE}
+trainUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+testUrl <- "https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+download.file(trainUrl, destfile = 'pml-training.csv')
+download.file(testUrl, destfile = 'pml-testing.csv')
+```
+```{r data_input2}
+training <- read.csv('pml-training.csv')
+testing <- read.csv('pml-testing.csv')
+```
+#Exploratory Data Analysis
+
+```{r EDA, echo = FALSE}
+str(training)
+names(training)
+```
+
+As can be seen from the dateset variable names, some variables can be excluded as they do not influence the outcome hence not needed for the model fitting. These variables include subject names, timestamps, secondary measurement characteristics (variance, standard deviation, skewness, kurtosis). So, the next step will be to exclude these columns from the training dataset:
+
+```{r cleandata}
+excludeNames <- c('X', 'user_name', 'new_window', "num_window", 
+                  'raw_timestamp_part_1', 'raw_timestamp_part_2', 'cvtd_timestamp')
+moreNames<- grep('std|var|skewness|kurtosis', names(training), value = TRUE)
+excludeNames <- c(excludeNames, moreNames)
+training1 <- training[-which(names(training) %in% excludeNames)]
+```
+
+#Variable importance
+
+In order to determine the variable importance I will create a smaller dataset and clean it from NA and empty cells: 
+
+```{r mini, results=FALSE}
+training1 <- training1[sample(nrow(training1)),]
+minitrain <- training1[1:200,]
+
+fun1 <- function(x){
+  list <- c()
+  w <- ncol(x)
+  l <- nrow(x)
+  for (i in 1:w){
+    if (sum(nzchar(as.character(x[,i]))*1)!=l) {
+      list <- c(list, i)
+    }
+  }
+list
+}
+
+
+which(colSums(is.na(minitrain))!=0, arr.ind = TRUE) -> a
+minitrain <- minitrain[, -a]
+b <- fun1(minitrain)
+minitrain1 <- minitrain[,-b]
+```
+
+Then I will fit a randomForest model and pass it to the **varImp** function from **caret** package:
+
+```{r VI_model}
+library(caret)
+library(rpart)
+
+rfMod <- train(classe ~ ., data = minitrain1, method = 'rf')
+varImp(rfMod) -> vIm
+vIm
+```
+
+From the results of **varImp** function I can pick the most significant predictors.
+For the cross-validation, I will implement K-fold method with k = 10, using trainControl() function:
+
+```{r Predictors}
+as.data.frame(vIm$importance) -> vImdf
+asdf <- data.frame(Names = rownames(vImdf), Importance = vImdf$Overall)
+asdf[order(-asdf$Importance),]
+as.character(asdf$Names[1:4]) -> importantPredictors
+finalSet <- c(importantPredictors, 'classe')
+final_training <- training[which(names(training) %in% finalSet)]
+
+set.seed(171985)
+control <- trainControl(method = 'repeatedcv', number = 10, repeats = 1)
+finMod <- train(classe ~ ., data = final_training, method = 'rf',trControl = control)
+```
+
+The resulting accuracy is `r finMod$results$Accuracy[1]`
+
+#Prediction
+
+Last step will be to use the model on the testing data set provided.
+```{r prediction}
+pred <- predict(finMod, testing)
+pred
+```
