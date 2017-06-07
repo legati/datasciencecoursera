@@ -1,0 +1,34 @@
+---
+title: "DDP_assign1"
+author: "Mykola Klymenko"
+date: "15 November 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Intro
+Here is an interactive map made using **leaflet** based on data from the dataset **quakes**.
+The data set give the locations of 1000 seismic events of MB > 4.0. The events occurred in a cube near Fiji since 1964.
+
+Here is the takeout from the dataset, which demonstrates how the data is organised.
+```{r quakes}
+head(quakes, 10)
+```
+
+## Leaflet
+
+Here is the map of the first 10 earthquake centre locations:
+
+```{r leaflet, echo=FALSE}
+suppressMessages(library(leaflet))
+data(quakes)
+#locations <- quakes[1:10,c(1,2)]
+map1 <- leaflet(data = quakes[1:10,]) %>% 
+        addTiles() %>%
+        addCircleMarkers(~long, ~lat, 
+                         popup = ~as.character(mag))
+map1
+```

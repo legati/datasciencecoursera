@@ -1,0 +1,37 @@
+---
+title: "Developing Data Products: Assignment #2"
+author: "Mykola Klymenko"
+date: "14 November 2016"
+output: ioslides_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Description
+
+Here is an interactive plot made using **plotly** based on data from the dataset **quakes**.
+The data set give the locations of 1000 seismic events of MB > 4.0. The events occurred in a cube near Fiji since 1964.
+
+The plot demonstrates the relation between the earthquake depth and its Richter Magnitude.
+
+## Slide with R Output
+Here is the takeout from the dataset, which demonstrates how the data is organised.
+```{r quakes, echo = TRUE}
+head(quakes, 10)
+```
+
+## Slide with Plot
+
+```{r plot, echo = FALSE}
+suppressMessages(library(plotly))
+suppressMessages(library(ggplot2))
+g <- ggplot(quakes, aes(x = depth, y = mag)) +
+  geom_point() +
+  geom_smooth() +
+  ggtitle('Relation between earthquake magnitude and depth')
+ggplotly(g)
+
+```
+
